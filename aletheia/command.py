@@ -48,3 +48,46 @@ def build(target, path=None, preserve=False, devel=False):
     finally:
         if cleanup:
             shutil.rmtree(temp_dir)
+
+
+def assemble(path, devel=False):
+    path = path or os.getcwd()
+
+    for root, dirs, files in os.walk(path):
+        rel_path = os.path.relpath(root, path)
+        if 'aletheia.yml' in files:
+            file_path = os.path.join(root, 'aletheia.yml')
+            logger.info(f'Processing docs source in {rel_path}.')
+            pipeline_obj = pipeline.Pipeline(file_path, devel=devel)
+            pipeline_obj.load()
+            pipeline_obj.run()
+            logger.info(f'Finished processing docs source in {rel_path}.')
+
+
+ALETHEIA_YML = '''
+pipeline:
+- empty: {}
+- noop: {}
+'''.lstrip()
+
+GITIGNORE = '''
+*
+**/*
+!aletheia.yml
+!.gitignore
+'''.lstrip()
+
+
+def init(path, devel=False):
+    path = path or os.getcwd()
+
+    if os.path.exists(os.path.join(path, 'aletheia.yml')):
+        raise exceptions.AletheiaExeception(f'Path {os.path.abspath(path)} already has an aletheia.yml file.')
+
+    with open(os.path.join(path, 'aletheia.yml'), 'w') as ofs:
+        ofs.write(ALETHEIA_YML)
+    
+    with open(os.path.join(path, '.gitignore'), 'w') as ofs:
+        ofs.write(GITIGNORE)
+
+    logger.info(f'Initialized empty Aletheia config in {os.path.abspath(path)}.')

@@ -5,8 +5,8 @@ import yaml
 
 from .builders import sphinx
 from .exceptions import ConfigError
-from .converters import pandoc, hugoify, subdir
-from .sources import github, googledrive, local
+from .converters import pandoc, hugoify, subdir, noop
+from .sources import github, googledrive, local, empty
 from .utils import copytree
 
 PLUGINS = {
@@ -16,7 +16,9 @@ PLUGINS = {
     'googledrive': googledrive.Source,
     'hugoify': hugoify.Plugin,
     'local': local.Source,
-    'subdir': subdir.Plugin
+    'subdir': subdir.Plugin,
+    'empty': empty.Source,
+    'noop': noop.Plugin
 }
 
 
