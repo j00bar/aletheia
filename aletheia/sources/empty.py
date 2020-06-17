@@ -18,7 +18,7 @@ class Source:
             try:
                 shutil.rmtree(self._tempdir)
             except:  # noqa: E722
-                logger.error('Error cleaning up local plugin.')
+                logger.error('Error cleaning up empty plugin.')
 
     @property
     def working_dir(self):

@@ -11,9 +11,10 @@ ensure_dependencies(('plantuml', None))
 logger = logging.getLogger(__name__)
 
 class Plugin:
-    def __init__(self, working_dir, cmdline_args=[], devel=False):
+    def __init__(self, working_dir, cmdline_args=[], keep_puml=False, devel=False):
         self.working_dir = working_dir
         self.cmdline_args = cmdline_args
+        self.keep_puml = keep_puml
         self.devel = devel
         self._tempdir = None
 
@@ -22,7 +23,7 @@ class Plugin:
             try:
                 shutil.rmtree(self._tempdir)
             except:  # noqa: E722
-                logger.error('Error cleaning up subdir plugin.')
+                logger.error('Error cleaning up plantuml plugin.')
     
     @property
     def output_dir(self):
@@ -46,7 +47,8 @@ class Plugin:
                     )
                     if result.returncode != 0:
                         raise exceptions.AletheiaExeception('Builder returned non-zero exit code.')
-                    os.remove(file_path)
+                    if not self.keep_puml:
+                        os.remove(file_path)
         logger.info('PlantUML scan complete.')
         return self.output_dir
 
