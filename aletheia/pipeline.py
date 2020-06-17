@@ -3,7 +3,7 @@ import os
 
 import yaml
 
-from .builders import sphinx
+from .builders import sphinx, plantuml
 from .exceptions import ConfigError
 from .converters import pandoc, hugoify, subdir, noop
 from .sources import github, googledrive, local, empty
@@ -18,7 +18,8 @@ PLUGINS = {
     'local': local.Source,
     'subdir': subdir.Plugin,
     'empty': empty.Source,
-    'noop': noop.Plugin
+    'noop': noop.Plugin,
+    'plantuml': plantuml.Plugin
 }
 
 
