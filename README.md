@@ -10,14 +10,38 @@ and assemble a unified tree for Hugo to build.
 
 ## Specifying a foreign documentation source
 
-To graft a source of documentation onto your core tree, simply drop a file `aletheia.yml` in an otherwise empty
-directory where you want the foreign docs to live in your tree. The `aletheia.yml` file contains details about the
-pipeline to gather, build, and/or convert the foreign documentation into the format you require.
+To graft a source of documentation onto your core tree, run:
+
+```
+aletheia init path/in/docs/to/graft/onto
+```
+
+This will create a no-op `aletheia.yml` file in that path as well as a `.gitignore` file to prevent any assembled
+files from polluting your core documentation tree.  The `aletheia.yml` file contains details about the pipeline to 
+gather, build, and/or convert the foreign documentation into the format you require.
 
 ## Assembling your tree
 
 To assemble a build of your docs, run:
 
 ```
-aletheia build --src /path/to/core-docs /path/to/write/output
+aletheia assemble /path/to/write/output
 ```
+
+This will build your documentation in place.
+
+## Building to export
+
+If you wish to build a copy of the assembled docs for export elsewhere, say, to be served by a webserver like nginx,
+you can use the `build` command instead of `assemble`:
+
+```
+aletheia build --src /path/to/core/doctree /path/to/build/to
+```
+
+This will leave your source tree untouched.
+
+## Things we know we need to do still
+
+1. We need to document the plugins.
+2. We need to document how and make it easier to get Google Drive credentials for the `googledrive` plugin.
