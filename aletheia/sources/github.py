@@ -4,6 +4,8 @@ import subprocess
 import shutil
 import tempfile
 
+from dateutil import parser
+
 from ..utils import ensure_dependencies, devel_dir
 from ..exceptions import AletheiaExeception
 
@@ -50,6 +52,18 @@ class Source:
         if not result.returncode == 0:
             logger.error(f'Failed to clone repository - git exited with {result.returncode}')
             raise AletheiaExeception('Error retrieving source.')
+        
+        # A git clone will set the modtime of every file to the time the clone was made. We need to set them
+        # to the time that the last commit occurred.
+        result = subprocess.run(['git', 'log', '-1', '--format=%cd'], cwd=self.working_dir, stdout=subprocess.PIPE)
+        if not result.returncode == 0:
+            logger.error(f'Failed to obtain last commit timestamp - git exited with {result.returncode}')
+        last_commit_timestring = result.stdout
+        last_commit_dt = parser.parse(last_commit_timestring)
+        last_commit_timestamp = last_commit_dt.timestamp()
+        for root, dirs, files in os.walk(self.working_dir):
+            for filename in files:
+                os.utime(os.path.join(root, filename), (last_commit_timestamp, last_commit_timestamp))
         return self.working_dir
         
 

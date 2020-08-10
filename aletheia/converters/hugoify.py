@@ -74,6 +74,7 @@ class Plugin:
         return title, content
 
     def run(self):
+        max_timestamp = 0.0
         for root, dirs, files in os.walk(self.working_dir):
             for filename in files:
                 input_path = os.path.join(root, filename)
@@ -81,6 +82,7 @@ class Plugin:
                 os.makedirs(os.path.join(self.output_dir, rel_path), exist_ok=True)
                 base, ext = os.path.splitext(filename)
                 if ext == '.md':
+                    max_timestamp = max(max_timestamp, os.stat(input_path).st_mtime)
                     output_filename = '_index.md' if base == 'index' else f'{base}.md'
                     output_path = os.path.join(self.output_dir, rel_path, output_filename)
                     with open(input_path) as ifs:
@@ -98,6 +100,7 @@ class Plugin:
                                 '---\n',
                                 html_content
                             ])
+                    os.utime(output_path, (os.stat(input_path).st_mtime, os.stat(input_path).st_mtime))
                 else:
                     output_path = os.path.join(self.output_dir, rel_path, filename)
                     shutil.copy2(input_path, output_path)
@@ -106,12 +109,16 @@ class Plugin:
             if os.path.exists(index_path):
                 logger.warn('Hugoify plugin told to add index, but index already exists!')
             else:
-                metadata = dict(title=self.index_title, date=datetime.datetime.now(), weight=self.weight)
+                metadata = dict(
+                    title=self.index_title, 
+                    date=datetime.datetime.fromtimestamp(max_timestamp), 
+                    weight=self.weight)
                 with open(index_path, 'w') as ofs:
                     ofs.writelines([
                         '---\n',
                         yaml.dump(metadata),
                         '---\n'
                     ])
+                os.utime(index_path, (max_timestamp, max_timestamp))
         return self.output_dir
 

@@ -28,6 +28,14 @@ def main(args=None):
         'target', help='Path to output assembled documentation tree'
     )
 
+    export_parser = subparsers.add_parser('export')
+    export_parser.add_argument(
+        'src', help='Source path or GitHub repository.'
+    )
+    export_parser.add_argument(
+        'target', help='Target GitHub repository.'
+    )
+
     init_parser = subparsers.add_parser('init')
     init_parser.add_argument(
         'path', help='Path to initialize with Aletheia data', default='.', nargs='?'
@@ -69,6 +77,9 @@ def main(args=None):
     elif config.command == 'init':
         kwargs = dict(devel=config.devel)
         command.init(config.path, **kwargs)
+    elif config.command == 'export':
+        kwargs = dict(devel=config.devel)
+        command.export(config.src, config.target, **kwargs)
 
 if __name__ == '__main__':
     main()

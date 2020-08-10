@@ -4,6 +4,7 @@ import os
 import re
 import shutil
 import subprocess
+import time
 from urllib import parse as urlparse
 
 from bs4 import BeautifulSoup
@@ -20,7 +21,7 @@ ensure_dependencies(('sphinx-build', None),
 
 
 class Plugin:
-    def __init__(self, working_dir, dir='docs', install_deps=False, title=None, metadata=None, devel=False):
+    def __init__(self, working_dir, dir='docs', install_deps=False, title=None, devel=False):
         self.working_dir = working_dir
         self.dir = dir
         self.use_pipenv = install_deps and os.path.exists(os.path.join(working_dir, 'Pipfile'))
@@ -73,7 +74,7 @@ class Plugin:
         )
         open(conf_py, 'w').write(conf_py_src)
 
-    def __clean_html_markup(self, html_dir):
+    def __clean_html_markup(self, html_dir, mod_time):
         logger.info('Cleaning up HTML markup from Sphinx output.')
         seen = []
         for root, dirs, files in os.walk(html_dir):
@@ -132,6 +133,22 @@ class Plugin:
                     seen.append(rel_path)
                     open(full_path, 'w').write(doc.prettify())
 
+                    # Set mod_time based on source's original mod_time
+                    os.utime(full_path, (mod_time, mod_time))
+
+    def __find_latest_modtime(self):
+        mod_time = 0
+        for root, dirs, files in os.walk(self.working_dir):
+            mod_time = max(
+                [stat.st_mtime for stat in [
+                    os.stat(f) for f in [
+                        os.path.join(root, file) for file in files if file.endswith('.rst')
+                        ]
+                    ]
+                ], default=mod_time
+            )
+        return mod_time
+
     def run(self):
         environ = dict(os.environ)
 
@@ -155,6 +172,8 @@ class Plugin:
                 )
             if result.returncode != 0:
                 raise AletheiaExeception('Builder pre-build returned non-zero exit code.')
+
+        mod_time = self.__find_latest_modtime()
 
         self.__modify_sphinx_theme_settings()
 
@@ -185,6 +204,6 @@ class Plugin:
         html_dir = os.path.normpath(
             os.path.join(self.working_dir, self.dir, builddir, 'html')
         )
-        self.__clean_html_markup(html_dir)
+        self.__clean_html_markup(html_dir, mod_time)
 
         return html_dir

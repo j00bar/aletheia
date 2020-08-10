@@ -59,6 +59,8 @@ class Plugin:
                     )
                     if result.returncode != 0:
                         raise AletheiaExeception('Error during pandoc conversion to Markdown.')
+                    modtime = os.stat(input_path).st_mtime
+                    os.utime(output_path, (modtime, modtime))
                 else:
                     output_path = os.path.join(self.output_dir, rel_path, filename)
                     shutil.copy2(input_path, output_path)

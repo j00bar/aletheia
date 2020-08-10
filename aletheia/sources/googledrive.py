@@ -79,10 +79,11 @@ class Source:
         service = build('drive', 'v3', credentials=creds)
 
         if not self.title:
-            response = service.files().get(fileId=self.folder_id)
+            response = service.files().get(fileId=self.folder_id).execute()
             self.title = response['name']
 
         page_token = None
+        index_timestamp = 0.0
         while 1:
             try:
                 param = {}
@@ -109,10 +110,10 @@ class Source:
                             while not done:
                                 status, done = downloader.next_chunk()
                         # Set proper file timestamps
-                        atime = datetime.datetime.utcnow().timestamp()
                         mtime = parser.parse(file_['modifiedTime']).timestamp()
+                        index_timestamp = max(index_timestamp, mtime)
                         os.utime(os.path.join(self.working_dir, filename),
-                                 (atime, mtime))
+                                 (mtime, mtime))
                     except errors.HttpError as e:
                         logger.warning(f'Error downloading file from Google "{file_["name"]}" - {file_["id"]} - {e}')
                 page_token = response.get('nextPageToken')
@@ -123,5 +124,6 @@ class Source:
         logger.info('All files retrieved.')
         with open(os.path.join(self.working_dir, '_index.md'), 'w') as ofs:
             ofs.write(f'# {self.title}\n')
+        os.utime(os.path.join(self.working_dir, '_index.md'), (index_timestamp, index_timestamp))
         return self.working_dir
 

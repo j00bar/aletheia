@@ -1,0 +1,6 @@
+.git/
+.vscode/
+Dockerfile
+credentials.json
+token.pickle
+*.egg-info

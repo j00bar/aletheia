@@ -1,16 +1,50 @@
+import datetime
 import logging
 import os
+import re
 import shutil
+import subprocess
 import tempfile
 
 from . import pipeline, exceptions
+from .sources import github
 from .utils import devel_dir, copytree
 
 logger = logging.getLogger(__name__)
 
 
-def build(target, path=None, preserve=False, devel=False):
-    path = path or os.getcwd()
+def __process_pipeline(path, devel=False, remove_artifacts=False):
+    for root, dirs, files in os.walk(path):
+        rel_path = os.path.relpath(root, path)
+        if 'aletheia.yml' in files:
+            file_path = os.path.join(root, 'aletheia.yml')
+            logger.info(f'Processing docs source in {rel_path}.')
+            pipeline_obj = pipeline.Pipeline(file_path, devel=devel)
+            pipeline_obj.load()
+            pipeline_obj.run()
+            if remove_artifacts:
+                os.remove(file_path)
+                if os.path.exists(os.path.join(root, '.gitignore')):
+                    os.remove(os.path.join(root, '.gitignore'))
+            logger.info(f'Finished processing docs source in {rel_path}.')
+
+
+GITHUB_RE = re.compile(r'^github:([^/]+/[^@]+)@?(.+?)?$')
+
+def __local_or_github(path):
+    match = GITHUB_RE.match(path)
+    if match:
+        # This is a github repo url
+        repo, branch = match.groups()
+        plugin = github.Source(repo, branch or 'master')
+        to_return = plugin.run(), plugin.cleanup
+    else:
+        to_return = path or os.getcwd(), lambda: None
+    return to_return
+
+
+def build(target, path=None, preserve=False, remove_artifacts=False, devel=False):
+    path, callback = __local_or_github(path)
     target = target.rstrip('/')
 
     if os.path.exists(target):
@@ -26,15 +60,7 @@ def build(target, path=None, preserve=False, devel=False):
     try:
         working_dir = os.path.join(temp_dir, 'aletheia')
         copytree(path, working_dir)
-        for root, dirs, files in os.walk(working_dir):
-            rel_path = os.path.relpath(root, working_dir)
-            if files == ['aletheia.yml']:
-                file_path = os.path.join(root, files[0])
-                logger.info(f'Processing docs source in {rel_path}.')
-                pipeline_obj = pipeline.Pipeline(file_path, devel=devel)
-                pipeline_obj.load()
-                pipeline_obj.run()
-                logger.info(f'Finished processing docs source in {rel_path}.')
+        __process_pipeline(working_dir, devel, remove_artifacts=remove_artifacts)
         if not os.path.exists(target):
             os.mkdir(target)
         copytree(working_dir, target, nonempty_ok=devel)
@@ -48,20 +74,60 @@ def build(target, path=None, preserve=False, devel=False):
     finally:
         if cleanup:
             shutil.rmtree(temp_dir)
+            callback()
 
 
 def assemble(path, devel=False):
     path = path or os.getcwd()
+    __process_pipeline(path, devel)
 
-    for root, dirs, files in os.walk(path):
-        rel_path = os.path.relpath(root, path)
-        if 'aletheia.yml' in files:
-            file_path = os.path.join(root, 'aletheia.yml')
-            logger.info(f'Processing docs source in {rel_path}.')
-            pipeline_obj = pipeline.Pipeline(file_path, devel=devel)
-            pipeline_obj.load()
-            pipeline_obj.run()
-            logger.info(f'Finished processing docs source in {rel_path}.')
+
+def export(path, dest_repo, devel=False):
+    match = GITHUB_RE.match(dest_repo)
+    if not match:
+        raise ValueError('The destination repo must be of the format github:account/project[@branch]')
+
+    # build_dir is where we will assemble the current build
+    build_dir = tempfile.mkdtemp()
+    repo, branch = match.groups()
+    plugin = github.Source(repo, branch or 'master')
+
+    try:
+        # export_dir is where we will clone the destination repo
+        export_dir = plugin.run()
+        build(build_dir, path, devel=devel, remove_artifacts=True)
+        # remove the .git from the build tree and move the destination repo's .git over
+        # that way we let git do the resolution of everything
+        shutil.rmtree(os.path.join(build_dir, '.git'))
+        copytree(
+            os.path.join(export_dir, '.git'),
+            os.path.join(build_dir, '.git')
+        )
+
+        # Did anything change?
+        result = subprocess.run(['git', 'diff', '--exit-code'], cwd=build_dir)
+        if result.returncode == 0:
+            logger.info('No changes detected.')
+            return
+
+        result = subprocess.run(['git', 'add', '.'],
+                                # env=dict(GIT_TERMINAL_PROMPT='0'),
+                                cwd=build_dir)
+        if result.returncode:
+            raise exceptions.AletheiaExeception('Error updating destination git repo.')
+        result = subprocess.run(['git', 'commit', '-m', f'Aletheia docs build {datetime.datetime.utcnow()}'],
+                                cwd=build_dir)
+        if result.returncode:
+            raise exceptions.AletheiaException('Error committing changes.')
+        result = subprocess.run(['git', 'push'], cwd=build_dir)
+        if result.returncode:
+            raise exceptions.AletheiaException('Error pushing changes.')
+    finally:
+        try:
+            shutil.rmtree(build_dir)
+            plugin.cleanup()
+        except:  # noqa: E722
+            pass
 
 
 ALETHEIA_YML = '''
