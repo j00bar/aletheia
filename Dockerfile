@@ -9,7 +9,7 @@ RUN mkdir /src && \
     chmod +x /usr/bin/plantuml && \
     yum clean all && \
     mkdir -p /etc/aletheia && \
-    git config --global credential.helper 'store --file /etc/aletheia/.git-credentials' && \
+    git config --global credential.helper 'store --file /etc/aletheia/git-credentials' && \
     git config --global user.email "aletheia@redhat.com" && \
     git config --global user.name "Aletheia Docs Builder"
 COPY . /src/aletheia
