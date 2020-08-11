@@ -7,14 +7,14 @@ import tempfile
 from dateutil import parser
 
 from ..utils import ensure_dependencies, devel_dir
-from ..exceptions import AletheiaExeception
+from ..exceptions import AletheiaException
 
 logger = logging.getLogger(__name__)
 ensure_dependencies(('git', '2.3.0'))
 
 
 class Source:
-    def __init__(self, repo, branch='master', devel=False):
+    def __init__(self, repo, branch='master', devel=False, **kwargs):
         self.repo = repo
         self.branch = branch
         self.devel = devel
@@ -51,7 +51,7 @@ class Source:
                                     cwd=self.working_dir)
         if not result.returncode == 0:
             logger.error(f'Failed to clone repository - git exited with {result.returncode}')
-            raise AletheiaExeception('Error retrieving source.')
+            raise AletheiaException('Error retrieving source.')
         
         # A git clone will set the modtime of every file to the time the clone was made. We need to set them
         # to the time that the last commit occurred.

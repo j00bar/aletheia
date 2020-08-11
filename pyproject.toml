@@ -13,6 +13,7 @@ google-api-python-client = "^1.8.3"
 google-auth-httplib2 = "^0.0.3"
 google-auth-oauthlib = "^0.4.1"
 python-dateutil = "^2.8.1"
+setuptools = ">=40.3.0"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"

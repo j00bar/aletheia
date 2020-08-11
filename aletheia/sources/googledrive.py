@@ -13,7 +13,7 @@ from google.auth.transport.requests import Request
 from dateutil import parser
 import yaml
 
-from ..exceptions import ConfigError, AletheiaExeception
+from ..exceptions import ConfigError, AletheiaException
 from ..utils import devel_dir
 
 MIME_TYPES = dict(
@@ -28,12 +28,12 @@ logger = logging.getLogger(__name__)
 
 class Source:
     def __init__(self, folder_id, format='docx', title=None, credentials='credentials.json', token='token.pickle', 
-                 devel=False):
+                 devel=False, config_dir='.'):
         self.folder_id = folder_id
         self.format = format
         self.title = title
-        self.credentials = credentials
-        self.token = token
+        self.credentials = os.path.join('/tmp', credentials)
+        self.token = os.path.join(config_dir, token)
         self._tempdir = None
         self.devel = devel
 
@@ -120,7 +120,7 @@ class Source:
                 if not page_token:
                     break
             except errors.HttpError as e:
-                raise AletheiaExeception(f'Error retrieving from Google: {e}')
+                raise AletheiaException(f'Error retrieving from Google: {e}')
         logger.info('All files retrieved.')
         with open(os.path.join(self.working_dir, '_index.md'), 'w') as ofs:
             ofs.write(f'# {self.title}\n')

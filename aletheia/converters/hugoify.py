@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 
 class Plugin:
-    def __init__(self, working_dir, weight=0, add_index=False, index_title=None, filename_as_title=False, devel=False):
+    def __init__(self, working_dir, weight=0, add_index=False, index_title=None, filename_as_title=False, devel=False, **kwargs):
         self.working_dir = working_dir
         self.weight = weight
         self.filename_as_title = filename_as_title

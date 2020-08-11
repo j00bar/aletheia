@@ -12,6 +12,9 @@ def main(args=None):
         description='Documentation aggregator that collects sources of truth and assimilates them into a single tree.'
     )
     parser.add_argument('--devel', action='store_true', help='Developer mode (For use during aletheia development)')
+    parser.add_argument(
+        '--config-dir', action='store', help='Path where config files and credentials are found.',
+        default='/etc/aletheia')
 
     subparsers = parser.add_subparsers(dest='command')
 
@@ -69,16 +72,16 @@ def main(args=None):
     logging.config.dictConfig(logging_config)
 
     if config.command == 'build':
-        kwargs = dict(path=config.src, devel=config.devel)
+        kwargs = dict(path=config.src, devel=config.devel, config_dir=config.config_dir)
         command.build(config.target, **kwargs)
     elif config.command == 'assemble':
-        kwargs = dict(devel=config.devel)
+        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
         command.assemble(config.path, **kwargs)
     elif config.command == 'init':
-        kwargs = dict(devel=config.devel)
+        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
         command.init(config.path, **kwargs)
     elif config.command == 'export':
-        kwargs = dict(devel=config.devel)
+        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
         command.export(config.src, config.target, **kwargs)
 
 if __name__ == '__main__':

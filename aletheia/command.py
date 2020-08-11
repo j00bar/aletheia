@@ -13,13 +13,13 @@ from .utils import devel_dir, copytree
 logger = logging.getLogger(__name__)
 
 
-def __process_pipeline(path, devel=False, remove_artifacts=False):
+def __process_pipeline(path, devel=False, remove_artifacts=False, config_dir=None):
     for root, dirs, files in os.walk(path):
         rel_path = os.path.relpath(root, path)
         if 'aletheia.yml' in files:
             file_path = os.path.join(root, 'aletheia.yml')
             logger.info(f'Processing docs source in {rel_path}.')
-            pipeline_obj = pipeline.Pipeline(file_path, devel=devel)
+            pipeline_obj = pipeline.Pipeline(file_path, devel=devel, config_dir=config_dir)
             pipeline_obj.load()
             pipeline_obj.run()
             if remove_artifacts:
@@ -30,6 +30,7 @@ def __process_pipeline(path, devel=False, remove_artifacts=False):
 
 
 GITHUB_RE = re.compile(r'^github:([^/]+/[^@]+)@?(.+?)?$')
+
 
 def __local_or_github(path):
     match = GITHUB_RE.match(path)
@@ -43,16 +44,16 @@ def __local_or_github(path):
     return to_return
 
 
-def build(target, path=None, preserve=False, remove_artifacts=False, devel=False):
+def build(target, path=None, preserve=False, remove_artifacts=False, devel=False, config_dir=None):
     path, callback = __local_or_github(path)
     target = target.rstrip('/')
 
     if os.path.exists(target):
         if os.listdir(target) and not devel:
-            raise exceptions.AletheiaExeception(f'Target path {target} exists and is non-empty.')
+            raise exceptions.AletheiaException(f'Target path {target} exists and is non-empty.')
     else:
         if not os.path.exists(os.path.dirname(target)) and os.path.isdir(os.path.dirname(target)):
-            raise exceptions.AletheiaExeception(f'No such parent directory for target path {target}.')
+            raise exceptions.AletheiaException(f'No such parent directory for target path {target}.')
 
     temp_dir = tempfile.mkdtemp()
     cleanup = not devel
@@ -60,7 +61,7 @@ def build(target, path=None, preserve=False, remove_artifacts=False, devel=False
     try:
         working_dir = os.path.join(temp_dir, 'aletheia')
         copytree(path, working_dir)
-        __process_pipeline(working_dir, devel, remove_artifacts=remove_artifacts)
+        __process_pipeline(working_dir, devel, remove_artifacts=remove_artifacts, config_dir=config_dir)
         if not os.path.exists(target):
             os.mkdir(target)
         copytree(working_dir, target, nonempty_ok=devel)
@@ -77,12 +78,12 @@ def build(target, path=None, preserve=False, remove_artifacts=False, devel=False
             callback()
 
 
-def assemble(path, devel=False):
+def assemble(path, devel=False, config_dir=None):
     path = path or os.getcwd()
-    __process_pipeline(path, devel)
+    __process_pipeline(path, devel, config_dir=config_dir)
 
 
-def export(path, dest_repo, devel=False):
+def export(path, dest_repo, devel=False, config_dir=None):
     match = GITHUB_RE.match(dest_repo)
     if not match:
         raise ValueError('The destination repo must be of the format github:account/project[@branch]')
@@ -95,7 +96,7 @@ def export(path, dest_repo, devel=False):
     try:
         # export_dir is where we will clone the destination repo
         export_dir = plugin.run()
-        build(build_dir, path, devel=devel, remove_artifacts=True)
+        build(build_dir, path, devel=devel, remove_artifacts=True, config_dir=config_dir)
         # remove the .git from the build tree and move the destination repo's .git over
         # that way we let git do the resolution of everything
         shutil.rmtree(os.path.join(build_dir, '.git'))
@@ -114,7 +115,7 @@ def export(path, dest_repo, devel=False):
                                 # env=dict(GIT_TERMINAL_PROMPT='0'),
                                 cwd=build_dir)
         if result.returncode:
-            raise exceptions.AletheiaExeception('Error updating destination git repo.')
+            raise exceptions.AletheiaException('Error updating destination git repo.')
         result = subprocess.run(['git', 'commit', '-m', f'Aletheia docs build {datetime.datetime.utcnow()}'],
                                 cwd=build_dir)
         if result.returncode:
@@ -144,11 +145,11 @@ GITIGNORE = '''
 '''.lstrip()
 
 
-def init(path, devel=False):
+def init(path, devel=False, config_dir=None):
     path = path or os.getcwd()
 
     if os.path.exists(os.path.join(path, 'aletheia.yml')):
-        raise exceptions.AletheiaExeception(f'Path {os.path.abspath(path)} already has an aletheia.yml file.')
+        raise exceptions.AletheiaException(f'Path {os.path.abspath(path)} already has an aletheia.yml file.')
 
     with open(os.path.join(path, 'aletheia.yml'), 'w') as ofs:
         ofs.write(ALETHEIA_YML)

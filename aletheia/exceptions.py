@@ -1,5 +1,5 @@
-class AletheiaExeception(Exception):
+class AletheiaException(Exception):
     pass
 
-class ConfigError(AletheiaExeception):
+class ConfigError(AletheiaException):
     pass

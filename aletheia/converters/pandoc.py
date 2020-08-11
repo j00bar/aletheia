@@ -8,7 +8,7 @@ import tempfile
 import yaml
 
 from ..utils import ensure_dependencies, devel_dir, copytree
-from ..exceptions import AletheiaExeception
+from ..exceptions import AletheiaException
 
 
 logger = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ FILE_EXTENSION_MAP = {
 
 
 class Plugin:
-    def __init__(self, working_dir, format, file_extensions=None, metadata=None, devel=False):
+    def __init__(self, working_dir, format, file_extensions=None, metadata=None, devel=False, **kwargs):
         self.working_dir = working_dir
         self.format = format
         self.file_extensions = file_extensions or FILE_EXTENSION_MAP.get(format, ['.'+format])
@@ -58,7 +58,7 @@ class Plugin:
                         ['pandoc', '-s', '-f', self.format, '-t', 'commonmark', input_path, '-o', output_path]
                     )
                     if result.returncode != 0:
-                        raise AletheiaExeception('Error during pandoc conversion to Markdown.')
+                        raise AletheiaException('Error during pandoc conversion to Markdown.')
                     modtime = os.stat(input_path).st_mtime
                     os.utime(output_path, (modtime, modtime))
                 else:

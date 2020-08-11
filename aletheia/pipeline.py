@@ -24,11 +24,12 @@ PLUGINS = {
 
 
 class Pipeline:
-    def __init__(self, pipeline_file, devel=False):
+    def __init__(self, pipeline_file, devel=False, config_dir=None):
         self.pipeline_file = pipeline_file
         self.target_dir = os.path.dirname(self.pipeline_file)
         self.pipeline = []
         self.devel = devel
+        self.config_dir = config_dir
     
     def load(self):
         with open(self.pipeline_file) as ifs:
@@ -50,7 +51,7 @@ class Pipeline:
         args = ()
         output_dir = None
         for plugin, kwargs in self.pipeline:
-            plugin_instance = plugin(*args, devel=self.devel, **kwargs)
+            plugin_instance = plugin(*args, devel=self.devel, config_dir=self.config_dir, **kwargs)
             if not self.devel:
                 atexit.register(plugin_instance.cleanup)
             output_dir = plugin_instance.run()

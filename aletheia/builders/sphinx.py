@@ -10,7 +10,7 @@ from urllib import parse as urlparse
 from bs4 import BeautifulSoup
 
 from ..utils import ensure_dependencies
-from ..exceptions import AletheiaExeception
+from ..exceptions import AletheiaException
 from ..converters import pandoc
 
 
@@ -21,7 +21,7 @@ ensure_dependencies(('sphinx-build', None),
 
 
 class Plugin:
-    def __init__(self, working_dir, dir='docs', install_deps=False, title=None, devel=False):
+    def __init__(self, working_dir, dir='docs', install_deps=False, title=None, devel=False, **kwargs):
         self.working_dir = working_dir
         self.dir = dir
         self.use_pipenv = install_deps and os.path.exists(os.path.join(working_dir, 'Pipfile'))
@@ -54,11 +54,11 @@ class Plugin:
                 r'SOURCEDIR\s*=\s*([^\s]+)',
                 open(os.path.join(self.working_dir, self.dir, 'Makefile')).read()).group(1)
         except AttributeError:
-            raise AletheiaExeception('Could not extract SOURCEDIR from Makefile.')
+            raise AletheiaException('Could not extract SOURCEDIR from Makefile.')
         sourcedir = os.path.normpath(os.path.join(self.working_dir, self.dir, sourcedir))
         conf_py = os.path.join(sourcedir, 'conf.py')
         if not os.path.exists(conf_py):
-            raise AletheiaExeception(f'Could not find conf.py in {sourcedir}.')
+            raise AletheiaException(f'Could not find conf.py in {sourcedir}.')
         conf_py_src = open(conf_py).read()
         conf_py_src = re.sub(
             r'^html_theme\s*=\s*[\'"][^\'"]+[\'"]',
@@ -171,7 +171,7 @@ class Plugin:
                     env=environ
                 )
             if result.returncode != 0:
-                raise AletheiaExeception('Builder pre-build returned non-zero exit code.')
+                raise AletheiaException('Builder pre-build returned non-zero exit code.')
 
         mod_time = self.__find_latest_modtime()
 
@@ -182,7 +182,7 @@ class Plugin:
                 r'BUILDDIR\s*=\s*([^\s]+)',
                 open(os.path.join(self.working_dir, self.dir, 'Makefile')).read()).group(1)
         except AttributeError:
-            raise AletheiaExeception('Could not extract BUILDDIR from Makefile.')
+            raise AletheiaException('Could not extract BUILDDIR from Makefile.')
 
         if self.devel and os.path.exists(os.path.join(self.working_dir, self.dir, builddir)):
             shutil.rmtree(os.path.join(self.working_dir, self.dir, builddir))
@@ -200,7 +200,7 @@ class Plugin:
             env=environ
         )
         if result.returncode != 0:
-            raise AletheiaExeception('Builder returned non-zero exit code.')
+            raise AletheiaException('Builder returned non-zero exit code.')
         html_dir = os.path.normpath(
             os.path.join(self.working_dir, self.dir, builddir, 'html')
         )

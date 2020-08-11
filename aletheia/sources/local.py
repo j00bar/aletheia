@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 
 
 class Source:
-    def __init__(self, path, devel=False):
+    def __init__(self, path, devel=False, **kwargs):
         self.path = path
         self.devel = devel
         self._tempdir = None

@@ -11,7 +11,7 @@ ensure_dependencies(('plantuml', None))
 logger = logging.getLogger(__name__)
 
 class Plugin:
-    def __init__(self, working_dir, cmdline_args=[], keep_puml=False, devel=False):
+    def __init__(self, working_dir, cmdline_args=[], keep_puml=False, devel=False, **kwargs):
         self.working_dir = working_dir
         self.cmdline_args = cmdline_args
         self.keep_puml = keep_puml
@@ -46,7 +46,7 @@ class Plugin:
                         ['plantuml'] + self.cmdline_args + ['-o', os.path.abspath(root), file_path]
                     )
                     if result.returncode != 0:
-                        raise exceptions.AletheiaExeception('Builder returned non-zero exit code.')
+                        raise exceptions.AletheiaException('Builder returned non-zero exit code.')
                     if not self.keep_puml:
                         os.remove(file_path)
         logger.info('PlantUML scan complete.')
