@@ -11,9 +11,12 @@ RUN mkdir /src && \
     mkdir -p /etc/aletheia && \
     git config --global credential.helper 'store --file /etc/aletheia/.git-credentials' && \
     git config --global user.email "aletheia@redhat.com" && \
-    git config --global user.name "Aletheia Docs Builder"
+    git config --global user.name "Aletheia Docs Builder" && \
+    mkdir /.cache && \
+    chmod g+rwX /.cache
 COPY . /src/aletheia
 WORKDIR /src/aletheia
 RUN poetry install && poetry run pip install -U setuptools
 ENTRYPOINT ["poetry", "run"]
+ENV POETRY_VIRTUALENVS_PATH=/.cache/venvs POETRY_CACHE_DIR=/.cache
 CMD ["aletheia"]
