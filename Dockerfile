@@ -9,11 +9,13 @@ RUN mkdir /src && \
     chmod +x /usr/bin/plantuml && \
     yum clean all && \
     mkdir -p /etc/aletheia && \
-    git config --global credential.helper 'store --file /etc/aletheia/git-credentials' && \
-    git config --global user.email "aletheia@redhat.com" && \
-    git config --global user.name "Aletheia Docs Builder"
-COPY . /src/aletheia
+    git config --system credential.helper 'store --file /etc/aletheia/git-credentials' && \
+    git config --system user.email "aletheia@redhat.com" && \
+    git config --system user.name "Aletheia Docs Builder"
+COPY poetry.lock pyproject.toml /src/aletheia/
 WORKDIR /src/aletheia
-ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=off
+ENV PYTHONUNBUFFERED=1 PIP_NO_CACHE_DIR=off PIPENV_VENV_IN_PROJECT=1
 RUN poetry config virtualenvs.create false && poetry install
+COPY . /src/aletheia/
+RUN python3 setup.py install
 CMD ["aletheia"]

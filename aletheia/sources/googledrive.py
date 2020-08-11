@@ -69,9 +69,12 @@ class Source:
                 creds = flow.run_local_server(port=8888)
             else:
                 raise ConfigError('No Google Drive credentials found. Run an interactive flow to generate them.')
-            # Save the credentials for the next run
-            with open(self.token, 'wb') as token:
-                pickle.dump(creds, token)
+            try:
+                # Save the credentials for the next run
+                with open(self.token, 'wb') as token:
+                    pickle.dump(creds, token)
+            except (PermissionError, OSError):
+                logger.warning('Could not save updated token.')
         return creds
     
     def run(self):
