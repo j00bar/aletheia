@@ -1,14 +1,14 @@
 import datetime
 import logging
 import os
-import re
 import shutil
 import subprocess
 import tempfile
+from urllib import parse as urlparse
 
 from . import pipeline, exceptions
-from .sources import github
-from .utils import devel_dir, copytree
+from .sources import git
+from .utils import copytree
 
 logger = logging.getLogger(__name__)
 
@@ -29,15 +29,17 @@ def __process_pipeline(path, devel=False, remove_artifacts=False, config_dir=Non
             logger.info(f'Finished processing docs source in {rel_path}.')
 
 
-GITHUB_RE = re.compile(r'^github:([^/]+/[^@]+)@?(.+?)?$')
-
-
 def __local_or_github(path):
-    match = GITHUB_RE.match(path)
-    if match:
-        # This is a github repo url
-        repo, branch = match.groups()
-        plugin = github.Source(repo, branch or 'master')
+    if path.startswith('https://'):
+        # This is a git repo url
+        url_parts = urlparse.urlparse(path)
+        hostname = url_parts.netloc
+        url_path = url_parts.path.lstrip('/')
+        if '@' in url_path:
+            repo, branch = url_path.split('@')
+        else:
+            repo, branch = url_path, 'master'
+        plugin = git.Source(hostname, repo, branch)
         to_return = plugin.run(), plugin.cleanup
     else:
         to_return = path or os.getcwd(), lambda: None
@@ -84,18 +86,15 @@ def assemble(path, devel=False, config_dir=None):
 
 
 def export(path, dest_repo, devel=False, config_dir=None):
-    match = GITHUB_RE.match(dest_repo)
-    if not match:
-        raise ValueError('The destination repo must be of the format github:account/project[@branch]')
+    if not dest_repo.startswith('https://'):
+        raise ValueError('The destination repo must be of the format https://hostname/account/project[@branch]')
 
     # build_dir is where we will assemble the current build
     build_dir = tempfile.mkdtemp()
-    repo, branch = match.groups()
-    plugin = github.Source(repo, branch or 'master')
 
     try:
         # export_dir is where we will clone the destination repo
-        export_dir = plugin.run()
+        export_dir, cleanup_callback = __local_or_github(dest_repo)
         build(build_dir, path, devel=devel, remove_artifacts=True, config_dir=config_dir)
         # remove the .git from the build tree and move the destination repo's .git over
         # that way we let git do the resolution of everything
@@ -126,7 +125,7 @@ def export(path, dest_repo, devel=False, config_dir=None):
     finally:
         try:
             shutil.rmtree(build_dir)
-            plugin.cleanup()
+            cleanup_callback()
         except:  # noqa: E722
             pass
 
