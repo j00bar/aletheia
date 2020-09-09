@@ -6,13 +6,14 @@ import yaml
 from .builders import sphinx, plantuml
 from .exceptions import ConfigError
 from .converters import pandoc, hugoify, subdir, noop
-from .sources import github, googledrive, local, empty
+from .sources import git, github, googledrive, local, empty
 from .utils import copytree
 
 PLUGINS = {
     'sphinx': sphinx.Plugin,
     'pandoc': pandoc.Plugin,
     'github': github.Source,
+    'git': git.Source,
     'googledrive': googledrive.Source,
     'hugoify': hugoify.Plugin,
     'local': local.Source,

@@ -47,7 +47,7 @@ def __local_or_github(path):
 
 
 def build(target, path=None, preserve=False, remove_artifacts=False, devel=False, config_dir=None):
-    path, callback = __local_or_github(path)
+    path, callback = __local_or_github(path or os.getcwd())
     target = target.rstrip('/')
 
     if os.path.exists(target):
