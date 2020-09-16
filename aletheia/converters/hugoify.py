@@ -8,25 +8,26 @@ import tempfile
 from bs4 import BeautifulSoup
 import yaml
 
+from .. import DEFAULTS
 from ..utils import devel_dir
 
 logger = logging.getLogger(__name__)
 
 
 class Plugin:
-    def __init__(self, working_dir, weight=0, add_index=False, index_title=None, filename_as_title=False, devel=False, **kwargs):
+    def __init__(self, working_dir, config=DEFAULTS, weight=0, add_index=False, index_title=None, filename_as_title=False, **kwargs):
         self.working_dir = working_dir
         self.weight = weight
         self.filename_as_title = filename_as_title
         self.add_index = add_index
         self.index_title = index_title
         self._tempdir = None
-        self.devel = devel
+        self.config = config
 
     @property
     def output_dir(self):
         if not self._tempdir:
-            if self.devel:
+            if self.config.devel:
                 self._tempdir = devel_dir(f'hugoify--{self.working_dir.replace("/", "--")}')
             else:
                 self._tempdir = tempfile.mkdtemp()

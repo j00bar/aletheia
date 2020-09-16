@@ -6,6 +6,7 @@ import tempfile
 
 from dateutil import parser
 
+from .. import DEFAULTS
 from ..utils import ensure_dependencies, devel_dir
 from ..exceptions import AletheiaException
 
@@ -14,11 +15,11 @@ ensure_dependencies(('git', '2.3.0'))
 
 
 class Source:
-    def __init__(self, hostname, repo, branch='master', devel=False, **kwargs):
+    def __init__(self, config=DEFAULTS, hostname='github.com', repo='', branch='master', **kwargs):
         self.hostname = hostname
         self.repo = repo
         self.branch = branch
-        self.devel = devel
+        self.config = config
         self._tempdir = None
     
     def cleanup(self):
@@ -31,7 +32,7 @@ class Source:
     @property
     def working_dir(self):
         if not self._tempdir:
-            if self.devel:
+            if self.config.devel:
                 self._tempdir = devel_dir(f'git--{self.repo}--{self.branch}')
             else:
                 self._tempdir = tempfile.mkdtemp()
@@ -39,7 +40,7 @@ class Source:
     
     def run(self):
         logger.info(f'Cloning git repo {self.repo}.')
-        if self.devel and os.path.exists(os.path.join(self.working_dir, '.git')):
+        if self.config.devel and os.path.exists(os.path.join(self.working_dir, '.git')):
             result = subprocess.run(['git', 'reset', '--hard'],
                                     # env=dict(GIT_TERMINAL_PROMPT='0'),
                                     cwd=self.working_dir)

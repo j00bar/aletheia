@@ -13,6 +13,7 @@ from google.auth.transport.requests import Request
 from dateutil import parser
 import yaml
 
+from .. import DEFAULTS
 from ..exceptions import ConfigError, AletheiaException
 from ..utils import devel_dir
 
@@ -27,20 +28,19 @@ logger = logging.getLogger(__name__)
 
 
 class Source:
-    def __init__(self, folder_id, format='docx', title=None, credentials='credentials.json', token='token.pickle', 
-                 devel=False, config_dir='.'):
+    def __init__(self, config=DEFAULTS, folder_id='', format='docx', title=None, credentials='credentials.json', token='token.pickle'):
         self.folder_id = folder_id
         self.format = format
         self.title = title
-        self.credentials = os.path.join('/tmp', credentials)
-        self.token = os.path.join(config_dir, token)
+        self.config = config
+        self.credentials = os.path.join(config.config_dir, credentials)
+        self.token = os.path.join(config.config_dir, token)
         self._tempdir = None
-        self.devel = devel
 
     @property
     def working_dir(self):
         if not self._tempdir:
-            if self.devel:
+            if self.config.devel:
                 self._tempdir = devel_dir(f'googledrive--{self.folder_id}--{self.format}')
             else:
                 self._tempdir = tempfile.mkdtemp()
@@ -54,7 +54,7 @@ class Source:
             logger.warning(f'Cleanup failed removing Google tempdir {self._tempdir}')
 
     def get_google_creds(self, interactive=False):
-        if os.path.exists(self.token):
+        if self.token:
             with open(self.token, 'rb') as token:
                 creds = pickle.load(token)
         else:

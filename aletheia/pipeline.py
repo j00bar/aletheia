@@ -3,16 +3,17 @@ import os
 
 import yaml
 
+from . import DEFAULTS
 from .builders import sphinx, plantuml
 from .exceptions import ConfigError
 from .converters import pandoc, hugoify, subdir, noop
-from .sources import git, github, googledrive, local, empty
+from .sources import git, googledrive, local, empty
 from .utils import copytree
 
 PLUGINS = {
     'sphinx': sphinx.Plugin,
     'pandoc': pandoc.Plugin,
-    'github': github.Source,
+    'github': git.Source,
     'git': git.Source,
     'googledrive': googledrive.Source,
     'hugoify': hugoify.Plugin,
@@ -25,12 +26,11 @@ PLUGINS = {
 
 
 class Pipeline:
-    def __init__(self, pipeline_file, devel=False, config_dir=None):
+    def __init__(self, pipeline_file, config=DEFAULTS):
         self.pipeline_file = pipeline_file
         self.target_dir = os.path.dirname(self.pipeline_file)
         self.pipeline = []
-        self.devel = devel
-        self.config_dir = config_dir
+        self.config = config
     
     def load(self):
         with open(self.pipeline_file) as ifs:
@@ -52,10 +52,14 @@ class Pipeline:
         args = ()
         output_dir = None
         for plugin, kwargs in self.pipeline:
-            plugin_instance = plugin(*args, devel=self.devel, config_dir=self.config_dir, **kwargs)
-            if not self.devel:
+            plugin_instance = plugin(*args, config=self.config, **kwargs)
+            if not self.config.devel:
                 atexit.register(plugin_instance.cleanup)
-            output_dir = plugin_instance.run()
+            try:
+                output_dir = plugin_instance.run()
+            except Exception as e:
+                output_dir = self.capture_build_error(plugin_instance, e)
+                break
             args = (output_dir,)
         if merge and output_dir:
             return self.merge(output_dir)

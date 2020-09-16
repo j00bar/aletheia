@@ -1,17 +1,15 @@
-import datetime
 import logging
 import os
 import re
 import shutil
 import subprocess
-import time
 from urllib import parse as urlparse
 
 from bs4 import BeautifulSoup
 
-from ..utils import ensure_dependencies
+from .. import DEFAULTS
 from ..exceptions import AletheiaException
-from ..converters import pandoc
+from ..utils import ensure_dependencies
 
 
 logger = logging.getLogger(__name__)
@@ -21,13 +19,13 @@ ensure_dependencies(('sphinx-build', None),
 
 
 class Plugin:
-    def __init__(self, working_dir, dir='docs', install_deps=False, title=None, devel=False, **kwargs):
+    def __init__(self, working_dir, config=DEFAULTS, dir='docs', install_deps=False, title=None, **kwargs):
         self.working_dir = working_dir
         self.dir = dir
         self.use_pipenv = install_deps and os.path.exists(os.path.join(working_dir, 'Pipfile'))
         self.use_poetry = install_deps and os.path.exists(os.path.join(working_dir, 'poetry.lock'))
         self.title = title
-        self.devel = devel
+        self.config = config
 
     def cleanup(self):
         if self.use_pipenv:
@@ -184,7 +182,7 @@ class Plugin:
         except AttributeError:
             raise AletheiaException('Could not extract BUILDDIR from Makefile.')
 
-        if self.devel and os.path.exists(os.path.join(self.working_dir, self.dir, builddir)):
+        if self.config.devel and os.path.exists(os.path.join(self.working_dir, self.dir, builddir)):
             shutil.rmtree(os.path.join(self.working_dir, self.dir, builddir))
 
         if self.use_pipenv:

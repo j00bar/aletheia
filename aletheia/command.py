@@ -6,20 +6,20 @@ import subprocess
 import tempfile
 from urllib import parse as urlparse
 
-from . import pipeline, exceptions
+from . import DEFAULTS, exceptions, pipeline
 from .sources import git
 from .utils import copytree
 
 logger = logging.getLogger(__name__)
 
 
-def __process_pipeline(path, devel=False, remove_artifacts=False, config_dir=None):
+def __process_pipeline(path, config, remove_artifacts=False):
     for root, dirs, files in os.walk(path):
         rel_path = os.path.relpath(root, path)
         if 'aletheia.yml' in files:
             file_path = os.path.join(root, 'aletheia.yml')
             logger.info(f'Processing docs source in {rel_path}.')
-            pipeline_obj = pipeline.Pipeline(file_path, devel=devel, config_dir=config_dir)
+            pipeline_obj = pipeline.Pipeline(file_path, config=config)
             pipeline_obj.load()
             pipeline_obj.run()
             if remove_artifacts:
@@ -46,27 +46,27 @@ def __local_or_github(path):
     return to_return
 
 
-def build(target, path=None, preserve=False, remove_artifacts=False, devel=False, config_dir=None):
+def build(target, path=None, preserve=False, remove_artifacts=False, config=DEFAULTS):
     path, callback = __local_or_github(path or os.getcwd())
     target = target.rstrip('/')
 
     if os.path.exists(target):
-        if os.listdir(target) and not devel:
+        if os.listdir(target) and not config.devel:
             raise exceptions.AletheiaException(f'Target path {target} exists and is non-empty.')
     else:
         if not os.path.exists(os.path.dirname(target)) and os.path.isdir(os.path.dirname(target)):
             raise exceptions.AletheiaException(f'No such parent directory for target path {target}.')
 
     temp_dir = tempfile.mkdtemp()
-    cleanup = not devel
+    cleanup = not config.devel
 
     try:
         working_dir = os.path.join(temp_dir, 'aletheia')
         copytree(path, working_dir)
-        __process_pipeline(working_dir, devel, remove_artifacts=remove_artifacts, config_dir=config_dir)
+        __process_pipeline(working_dir, remove_artifacts=remove_artifacts, config=config)
         if not os.path.exists(target):
             os.mkdir(target)
-        copytree(working_dir, target, nonempty_ok=devel)
+        copytree(working_dir, target, nonempty_ok=config.devel)
     except:  # noqa: E722
         if preserve:
             logger.exception(f'Error during build. Preserving build directory in {temp_dir}.')
@@ -80,12 +80,12 @@ def build(target, path=None, preserve=False, remove_artifacts=False, devel=False
             callback()
 
 
-def assemble(path, devel=False, config_dir=None):
+def assemble(path, config=DEFAULTS):
     path = path or os.getcwd()
-    __process_pipeline(path, devel, config_dir=config_dir)
+    __process_pipeline(path, config=config)
 
 
-def export(path, dest_repo, devel=False, config_dir=None):
+def export(path, dest_repo, config=DEFAULTS):
     if not dest_repo.startswith('https://'):
         raise ValueError('The destination repo must be of the format https://hostname/account/project[@branch]')
 
@@ -95,7 +95,7 @@ def export(path, dest_repo, devel=False, config_dir=None):
     try:
         # export_dir is where we will clone the destination repo
         export_dir, cleanup_callback = __local_or_github(dest_repo)
-        build(build_dir, path, devel=devel, remove_artifacts=True, config_dir=config_dir)
+        build(build_dir, path, remove_artifacts=True, config=config)
         # remove the .git from the build tree and move the destination repo's .git over
         # that way we let git do the resolution of everything
         shutil.rmtree(os.path.join(build_dir, '.git'))
@@ -144,7 +144,7 @@ GITIGNORE = '''
 '''.lstrip()
 
 
-def init(path, devel=False, config_dir=None):
+def init(path, config=DEFAULTS):
     path = path or os.getcwd()
 
     if os.path.exists(os.path.join(path, 'aletheia.yml')):
@@ -152,7 +152,7 @@ def init(path, devel=False, config_dir=None):
 
     with open(os.path.join(path, 'aletheia.yml'), 'w') as ofs:
         ofs.write(ALETHEIA_YML)
-    
+
     with open(os.path.join(path, '.gitignore'), 'w') as ofs:
         ofs.write(GITIGNORE)
 

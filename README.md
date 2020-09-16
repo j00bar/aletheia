@@ -32,7 +32,7 @@ This will build your documentation in place.
 
 ## Building to export
 
-If you wish to build a copy of the assembled docs for export elsewhere, say, to be served by a webserver like nginx,
+If you wish to build a copy of the assembled docs for export elsewhere, say, to be served by your documentation server,
 you can use the `build` command instead of `assemble`:
 
 ```

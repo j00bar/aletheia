@@ -1,17 +1,21 @@
 import argparse
 import logging
 import logging.config
+import os
 import sys
 
-from . import command
+import toml
+
+from . import DEFAULTS, command
+
 
 logger = logging.getLogger(__name__)
+
 
 def main(args=None):
     parser = argparse.ArgumentParser(
         description='Documentation aggregator that collects sources of truth and assimilates them into a single tree.'
     )
-    parser.add_argument('--devel', action='store_true', help='Developer mode (For use during aletheia development)')
     parser.add_argument(
         '--config-dir', action='store', help='Path where config files and credentials are found.',
         default='/etc/aletheia')
@@ -44,7 +48,16 @@ def main(args=None):
         'path', help='Path to initialize with Aletheia data', default='.', nargs='?'
     )
 
-    config = parser.parse_args(args or sys.argv[1:])
+    params = parser.parse_args(args or sys.argv[1:])
+    config = DEFAULTS.copy()
+    try:
+        config.update(toml.loads(open(os.path.join(params.config_dir, 'config.toml'))))
+    except OSError:
+        # There is no config.toml
+        pass
+    except (TypeError, toml.TomlDecodeError):
+        raise
+    config['config_dir'] = params.config_dir
 
     logging_config = {
         'version': 1,
@@ -71,18 +84,15 @@ def main(args=None):
     }
     logging.config.dictConfig(logging_config)
 
-    if config.command == 'build':
-        kwargs = dict(path=config.src, devel=config.devel, config_dir=config.config_dir)
-        command.build(config.target, **kwargs)
-    elif config.command == 'assemble':
-        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
-        command.assemble(config.path, **kwargs)
-    elif config.command == 'init':
-        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
-        command.init(config.path, **kwargs)
-    elif config.command == 'export':
-        kwargs = dict(devel=config.devel, config_dir=config.config_dir)
-        command.export(config.src, config.target, **kwargs)
+    if params.command == 'build':
+        command.build(params.target, path=params.src, config=config)
+    elif params.command == 'assemble':
+        command.assemble(params.path, config=config)
+    elif params.command == 'init':
+        command.init(params.path, config=config)
+    elif params.command == 'export':
+        command.export(params.src, params.target, config=config)
+
 
 if __name__ == '__main__':
     main()

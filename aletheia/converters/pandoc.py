@@ -1,12 +1,10 @@
-import datetime
 import logging
 import os
 import shutil
 import subprocess
 import tempfile
 
-import yaml
-
+from .. import DEFAULTS
 from ..utils import ensure_dependencies, devel_dir, copytree
 from ..exceptions import AletheiaException
 
@@ -19,13 +17,13 @@ FILE_EXTENSION_MAP = {
 
 
 class Plugin:
-    def __init__(self, working_dir, format, file_extensions=None, metadata=None, devel=False, **kwargs):
+    def __init__(self, working_dir, config=DEFAULTS, format='docx', file_extensions=None, metadata=None, **kwargs):
         self.working_dir = working_dir
         self.format = format
         self.file_extensions = file_extensions or FILE_EXTENSION_MAP.get(format, ['.'+format])
         self._metadata = metadata or {}
         self._tempdir = None
-        self.devel = devel
+        self.config = config
 
     def cleanup(self):
         if self._tempdir:
@@ -37,7 +35,7 @@ class Plugin:
     @property
     def output_dir(self):
         if not self._tempdir:
-            if self.devel:
+            if self.config.devel:
                 self._tempdir = devel_dir(f'pandoc--{self.working_dir.replace("/", "--")}')
             else:
                 self._tempdir = tempfile.mkdtemp()

@@ -2,6 +2,7 @@ import logging
 import shutil
 import tempfile
 
+from .. import DEFAULTS
 from ..utils import devel_dir
 
 
@@ -9,8 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class Source:
-    def __init__(self, devel=False, **kwargs):
-        self.devel = devel
+    def __init__(self, config=DEFAULTS, **kwargs):
+        self.config = config
         self._tempdir = None
 
     def cleanup(self):
@@ -23,7 +24,7 @@ class Source:
     @property
     def working_dir(self):
         if not self._tempdir:
-            if self.devel:
+            if self.config.devel:
                 self._tempdir = devel_dir(f'empty--{self.path}')
             else:
                 self._tempdir = tempfile.mkdtemp()
