@@ -12,5 +12,7 @@ class AttrDict(dict):
 
 DEFAULTS = AttrDict(
     devel=False,
-    config_dir='/etc/aletheia'
+    config_dir='/etc/aletheia',
+    error_template='error_templates/hugo.md.j2',
+    error_result_filename='_index.md'
 )

@@ -1,0 +1,28 @@
+---
+title: {{ dirname|capitalize }}
+---
+
+{{ '{{% pageinfo color="warning" %}}' }}
+
+The section of the documentation you're in is grafted on from an external source. But there was an error in compiling
+it.
+
+{{ '{{% /pageinfo %}}' }}
+
+{{ '{{% alert title="Source information" color="info" %}}' }}
+<pre>
+{{ source_info }}
+</pre>
+{{ '{{% /alert %}}' }}
+
+{{ '{{% alert title="Stack trace" color="warning" %}}' }}
+
+Plugin generating error:
+<pre>
+{{ plugin_info }}
+</pre>
+
+<pre>
+{{ stacktrace }}
+</pre>
+{{ '{{% /alert %}}' }}

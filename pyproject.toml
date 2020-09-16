@@ -20,6 +20,7 @@ sphinxcontrib-qthelp = "^1.0.3"
 sphinx_rtd_theme = "^0.5.0"
 jsx-lexer = "^0.0.8"
 toml = "^0.10.1"
+jinja2 = "^2.11.2"
 
 [tool.poetry.dev-dependencies]
 black = "^19.10b0"

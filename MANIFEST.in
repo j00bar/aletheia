@@ -1,0 +1,2 @@
+recursive-include aletheia/builders/sphinx_templates *
+recursive-include aletheia/error_templates *

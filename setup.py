@@ -1,4 +1,4 @@
-from setuptools import setup, find_packages
+from setuptools import setup
 
 
 with open("README.md", "r") as f:
@@ -11,7 +11,8 @@ setup(
     author='Joshua "jag" Ginsberg',
     url="https://github.com/RedHatInsights/aletheia",
     license="GPLv3",
-    packages=find_packages(),
+    packages=['aletheia'],
+    include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
     python_requires=">=3.6",

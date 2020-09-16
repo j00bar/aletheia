@@ -1,6 +1,12 @@
 import atexit
+import io
+import logging
 import os
+import sys
+import tempfile
+import traceback
 
+import jinja2
 import yaml
 
 from . import DEFAULTS
@@ -10,6 +16,8 @@ from .converters import pandoc, hugoify, subdir, noop
 from .sources import git, googledrive, local, empty
 from .utils import copytree
 
+
+logger = logging.getLogger(__name__)
 PLUGINS = {
     'sphinx': sphinx.Plugin,
     'pandoc': pandoc.Plugin,
@@ -45,29 +53,53 @@ class Pipeline:
             except StopIteration:
                 raise ConfigError(f'Could not find valid plugin in pipeline stage {i}')
             self.pipeline.append(
-                (PLUGINS[plugin_name], stage[plugin_name])
+                (plugin_name, PLUGINS[plugin_name], stage[plugin_name])
             )
         
     def run(self, merge=True):
         args = ()
         output_dir = None
-        for plugin, kwargs in self.pipeline:
-            plugin_instance = plugin(*args, config=self.config, **kwargs)
+        for plugin_name, plugin_cls, kwargs in self.pipeline:
+            plugin_instance = plugin_cls(*args, config=self.config, **kwargs)
             if not self.config.devel:
                 atexit.register(plugin_instance.cleanup)
             try:
                 output_dir = plugin_instance.run()
-            except Exception as e:
-                output_dir = self.capture_build_error(plugin_instance, e)
+            except Exception:
+                logger.exception('Pipeline plugin error.')
+                stacktrace = '\n'.join(traceback.format_exception(*sys.exc_info()))
+                output_dir = self.capture_build_error(plugin_name, kwargs, stacktrace)
                 break
             args = (output_dir,)
         if merge and output_dir:
-            return self.merge(output_dir)
+            self.merge(output_dir)
+            return self.target_dir
         else:
             return output_dir
-    
+
+    def capture_build_error(self, plugin_name, plugin_params, stacktrace):
+        plugin_info = io.StringIO()
+        source_info = io.StringIO()
+        source_name, _, source_params = self.pipeline[0]
+        yaml.safe_dump({plugin_name: plugin_params}, plugin_info)
+        yaml.safe_dump({source_name: source_params}, source_info)
+        context = dict(
+            dirname=os.path.basename(self.target_dir),
+            plugin_info=plugin_info.getvalue(),
+            source_info=source_info.getvalue(),
+            stacktrace=stacktrace
+        )
+        if os.path.isabs(self.config.error_template):
+            template_path = self.config.error_template
+        else:
+            template_path = os.path.join(os.path.dirname(__file__), self.config.error_template)
+        with open(template_path, 'r') as ifs:
+            template_obj = jinja2.Template(ifs.read())
+        tempdir = tempfile.mkdtemp()
+        with open(os.path.join(tempdir, self.config.error_result_filename), 'w') as ofs:
+            ofs.write(template_obj.render(context))
+        return tempdir
+
     def merge(self, output_dir):
         copytree(output_dir, self.target_dir, nonempty_ok=True)
-                
-
     

@@ -11,7 +11,6 @@ from googleapiclient.http import MediaIoBaseDownload
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
 from dateutil import parser
-import yaml
 
 from .. import DEFAULTS
 from ..exceptions import ConfigError, AletheiaException
