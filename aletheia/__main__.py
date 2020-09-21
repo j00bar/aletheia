@@ -51,7 +51,7 @@ def main(args=None):
     params = parser.parse_args(args or sys.argv[1:])
     config = DEFAULTS.copy()
     try:
-        config.update(toml.loads(open(os.path.join(params.config_dir, 'config.toml'))))
+        config.update(toml.load(open(os.path.join(params.config_dir, 'config.toml'))))
     except OSError:
         # There is no config.toml
         pass
