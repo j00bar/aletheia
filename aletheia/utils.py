@@ -41,6 +41,8 @@ def devel_dir(path_component):
         'aletheia',
         path_component
     )
+    if os.path.exists(to_return):
+        shutil.rmtree(to_return)
     os.makedirs(to_return, exist_ok=True)
     return to_return
 
