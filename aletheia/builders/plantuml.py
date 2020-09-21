@@ -30,7 +30,7 @@ class Plugin:
     def output_dir(self):
         if not self._tempdir:
             if self.config.devel:
-                self._tempdir = devel_dir(f'plantuml--{self.path}')
+                self._tempdir = devel_dir(f'plantuml--{self.working_dir.replace("/", "--")}')
             else:
                 self._tempdir = tempfile.mkdtemp()
         return self._tempdir

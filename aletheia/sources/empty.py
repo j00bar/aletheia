@@ -25,7 +25,7 @@ class Source:
     def working_dir(self):
         if not self._tempdir:
             if self.config.devel:
-                self._tempdir = devel_dir(f'empty--{self.path}')
+                self._tempdir = devel_dir('empty--')
             else:
                 self._tempdir = tempfile.mkdtemp()
         return self._tempdir

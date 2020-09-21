@@ -33,7 +33,7 @@ class Source:
     def working_dir(self):
         if not self._tempdir:
             if self.config.devel:
-                self._tempdir = devel_dir(f'git--{self.repo}--{self.branch}')
+                self._tempdir = devel_dir(f'git--{self.hostname}--{self.repo}--{self.branch}')
             else:
                 self._tempdir = tempfile.mkdtemp()
         return self._tempdir
