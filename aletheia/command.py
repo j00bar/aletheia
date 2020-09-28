@@ -29,7 +29,7 @@ def __process_pipeline(path, config, remove_artifacts=False):
             logger.info(f'Finished processing docs source in {rel_path}.')
 
 
-def __local_or_github(path):
+def __local_or_github(path, config):
     if path.startswith('https://'):
         # This is a git repo url
         url_parts = urlparse.urlparse(path)
@@ -39,7 +39,7 @@ def __local_or_github(path):
             repo, branch = url_path.split('@')
         else:
             repo, branch = url_path, 'master'
-        plugin = git.Source(hostname, repo, branch)
+        plugin = git.Source(hostname=hostname, repo=repo, branch=branch, config=config)
         to_return = plugin.run(), plugin.cleanup
     else:
         to_return = path or os.getcwd(), lambda: None
@@ -47,7 +47,7 @@ def __local_or_github(path):
 
 
 def build(target, path=None, preserve=False, remove_artifacts=False, config=DEFAULTS):
-    path, callback = __local_or_github(path or os.getcwd())
+    path, callback = __local_or_github(path or os.getcwd(), config)
     target = target.rstrip('/')
 
     if os.path.exists(target):
@@ -94,7 +94,7 @@ def export(path, dest_repo, config=DEFAULTS):
 
     try:
         # export_dir is where we will clone the destination repo
-        export_dir, cleanup_callback = __local_or_github(dest_repo)
+        export_dir, cleanup_callback = __local_or_github(dest_repo, config)
         build(build_dir, path, remove_artifacts=True, config=config)
         # remove the .git from the build tree and move the destination repo's .git over
         # that way we let git do the resolution of everything
