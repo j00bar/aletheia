@@ -1,4 +1,4 @@
-FROM centos:8
+FROM quay.io/app-sre/centos:8
 RUN mkdir /src && \
     yum install -y dnf-plugins-core && \
     yum config-manager --set-enabled PowerTools && \
