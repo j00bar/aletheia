@@ -5,22 +5,22 @@ import subprocess
 import tempfile
 
 from .. import DEFAULTS
-from ..utils import ensure_dependencies, devel_dir, copytree
+from ..utils import ensure_dependencies, devel_dir
 from ..exceptions import AletheiaException
 
 
 logger = logging.getLogger(__name__)
-ensure_dependencies(('pandoc', None))
+ensure_dependencies(("pandoc", None))
 FILE_EXTENSION_MAP = {
-    'html': ['.html', '.htm'],
+    "html": [".html", ".htm"],
 }
 
 
 class Plugin:
-    def __init__(self, working_dir, config=DEFAULTS, format='docx', file_extensions=None, metadata=None, **kwargs):
+    def __init__(self, working_dir, config=DEFAULTS, format="docx", file_extensions=None, metadata=None, **kwargs):
         self.working_dir = working_dir
         self.format = format
-        self.file_extensions = file_extensions or FILE_EXTENSION_MAP.get(format, ['.'+format])
+        self.file_extensions = file_extensions or FILE_EXTENSION_MAP.get(format, ["." + format])
         self._metadata = metadata or {}
         self._tempdir = None
         self.config = config
@@ -30,7 +30,7 @@ class Plugin:
             try:
                 shutil.rmtree(self._tempdir)
             except:  # noqa: E722
-                logger.exception('Error cleaning up Pandoc plugin.')
+                logger.exception("Error cleaning up Pandoc plugin.")
 
     @property
     def output_dir(self):
@@ -42,21 +42,21 @@ class Plugin:
         return self._tempdir
 
     def run(self):
-        logger.info(f'Converting files from {self.format} to Markdown using Pandoc.')
+        logger.info(f"Converting files from {self.format} to Markdown using Pandoc.")
         for root, dirs, files in os.walk(self.working_dir):
             for filename in files:
-                logger.debug('Filename: %s', filename)
+                logger.debug("Filename: %s", filename)
                 input_path = os.path.join(root, filename)
                 rel_path = os.path.relpath(root, self.working_dir)
                 os.makedirs(os.path.join(self.output_dir, rel_path), exist_ok=True)
                 base, ext = os.path.splitext(filename)
                 if ext in self.file_extensions:
-                    output_path = os.path.join(self.output_dir, rel_path, f'{base}.md')
+                    output_path = os.path.join(self.output_dir, rel_path, f"{base}.md")
                     result = subprocess.run(
-                        ['pandoc', '-s', '-f', self.format, '-t', 'commonmark', input_path, '-o', output_path]
+                        ["pandoc", "-s", "-f", self.format, "-t", "commonmark", input_path, "-o", output_path]
                     )
                     if result.returncode != 0:
-                        raise AletheiaException('Error during pandoc conversion to Markdown.')
+                        raise AletheiaException("Error during pandoc conversion to Markdown.")
                     modtime = os.stat(input_path).st_mtime
                     os.utime(output_path, (modtime, modtime))
                 else:

@@ -16,29 +16,29 @@ logger = logging.getLogger(__name__)
 def __process_pipeline(path, config, remove_artifacts=False):
     for root, dirs, files in os.walk(path):
         rel_path = os.path.relpath(root, path)
-        if 'aletheia.yml' in files:
-            file_path = os.path.join(root, 'aletheia.yml')
-            logger.info(f'Processing docs source in {rel_path}.')
+        if "aletheia.yml" in files:
+            file_path = os.path.join(root, "aletheia.yml")
+            logger.info(f"Processing docs source in {rel_path}.")
             pipeline_obj = pipeline.Pipeline(file_path, config=config)
             pipeline_obj.load()
             pipeline_obj.run()
             if remove_artifacts:
                 os.remove(file_path)
-                if os.path.exists(os.path.join(root, '.gitignore')):
-                    os.remove(os.path.join(root, '.gitignore'))
-            logger.info(f'Finished processing docs source in {rel_path}.')
+                if os.path.exists(os.path.join(root, ".gitignore")):
+                    os.remove(os.path.join(root, ".gitignore"))
+            logger.info(f"Finished processing docs source in {rel_path}.")
 
 
 def __local_or_github(path, config):
-    if path.startswith('https://'):
+    if path.startswith("https://"):
         # This is a git repo url
         url_parts = urlparse.urlparse(path)
         hostname = url_parts.netloc
-        url_path = url_parts.path.lstrip('/')
-        if '@' in url_path:
-            repo, branch = url_path.split('@')
+        url_path = url_parts.path.lstrip("/")
+        if "@" in url_path:
+            repo, branch = url_path.split("@")
         else:
-            repo, branch = url_path, 'master'
+            repo, branch = url_path, "master"
         plugin = git.Source(hostname=hostname, repo=repo, branch=branch, config=config)
         to_return = plugin.run(), plugin.cleanup
     else:
@@ -48,20 +48,20 @@ def __local_or_github(path, config):
 
 def build(target, path=None, preserve=False, remove_artifacts=False, config=DEFAULTS):
     path, callback = __local_or_github(path or os.getcwd(), config)
-    target = target.rstrip('/')
+    target = target.rstrip("/")
 
     if os.path.exists(target):
         if os.listdir(target) and not config.devel:
-            raise exceptions.AletheiaException(f'Target path {target} exists and is non-empty.')
+            raise exceptions.AletheiaException(f"Target path {target} exists and is non-empty.")
     else:
         if not os.path.exists(os.path.dirname(target)) and os.path.isdir(os.path.dirname(target)):
-            raise exceptions.AletheiaException(f'No such parent directory for target path {target}.')
+            raise exceptions.AletheiaException(f"No such parent directory for target path {target}.")
 
     temp_dir = tempfile.mkdtemp()
     cleanup = not config.devel
 
     try:
-        working_dir = os.path.join(temp_dir, 'aletheia')
+        working_dir = os.path.join(temp_dir, "aletheia")
         copytree(path, working_dir)
         __process_pipeline(working_dir, remove_artifacts=remove_artifacts, config=config)
         if not os.path.exists(target):
@@ -69,10 +69,10 @@ def build(target, path=None, preserve=False, remove_artifacts=False, config=DEFA
         copytree(working_dir, target, nonempty_ok=config.devel)
     except:  # noqa: E722
         if preserve:
-            logger.exception(f'Error during build. Preserving build directory in {temp_dir}.')
+            logger.exception(f"Error during build. Preserving build directory in {temp_dir}.")
             cleanup = False
         else:
-            logger.exception('Error during build.')
+            logger.exception("Error during build.")
         raise
     finally:
         if cleanup:
@@ -86,8 +86,8 @@ def assemble(path, config=DEFAULTS):
 
 
 def export(path, dest_repo, config=DEFAULTS):
-    if not dest_repo.startswith('https://'):
-        raise ValueError('The destination repo must be of the format https://hostname/account/project[@branch]')
+    if not dest_repo.startswith("https://"):
+        raise ValueError("The destination repo must be of the format https://hostname/account/project[@branch]")
 
     # build_dir is where we will assemble the current build
     build_dir = tempfile.mkdtemp()
@@ -98,30 +98,30 @@ def export(path, dest_repo, config=DEFAULTS):
         build(build_dir, path, remove_artifacts=True, config=config)
         # remove the .git from the build tree and move the destination repo's .git over
         # that way we let git do the resolution of everything
-        shutil.rmtree(os.path.join(build_dir, '.git'))
-        copytree(
-            os.path.join(export_dir, '.git'),
-            os.path.join(build_dir, '.git')
-        )
+        shutil.rmtree(os.path.join(build_dir, ".git"))
+        copytree(os.path.join(export_dir, ".git"), os.path.join(build_dir, ".git"))
 
         # Did anything change?
-        result = subprocess.run(['git', 'diff', '--exit-code'], cwd=build_dir)
+        result = subprocess.run(["git", "diff", "--exit-code"], cwd=build_dir)
         if result.returncode == 0:
-            logger.info('No changes detected.')
+            logger.info("No changes detected.")
             return
 
-        result = subprocess.run(['git', 'add', '.'],
-                                # env=dict(GIT_TERMINAL_PROMPT='0'),
-                                cwd=build_dir)
+        result = subprocess.run(
+            ["git", "add", "."],
+            # env=dict(GIT_TERMINAL_PROMPT='0'),
+            cwd=build_dir,
+        )
         if result.returncode:
-            raise exceptions.AletheiaException('Error updating destination git repo.')
-        result = subprocess.run(['git', 'commit', '-m', f'Aletheia docs build {datetime.datetime.utcnow()}'],
-                                cwd=build_dir)
+            raise exceptions.AletheiaException("Error updating destination git repo.")
+        result = subprocess.run(
+            ["git", "commit", "-m", f"Aletheia docs build {datetime.datetime.utcnow()}"], cwd=build_dir
+        )
         if result.returncode:
-            raise exceptions.AletheiaException('Error committing changes.')
-        result = subprocess.run(['git', 'push'], cwd=build_dir)
+            raise exceptions.AletheiaException("Error committing changes.")
+        result = subprocess.run(["git", "push"], cwd=build_dir)
         if result.returncode:
-            raise exceptions.AletheiaException('Error pushing changes.')
+            raise exceptions.AletheiaException("Error pushing changes.")
     finally:
         try:
             shutil.rmtree(build_dir)
@@ -130,30 +130,30 @@ def export(path, dest_repo, config=DEFAULTS):
             pass
 
 
-ALETHEIA_YML = '''
+ALETHEIA_YML = """
 pipeline:
 - empty: {}
 - noop: {}
-'''.lstrip()
+""".lstrip()
 
-GITIGNORE = '''
+GITIGNORE = """
 *
 **/*
 !aletheia.yml
 !.gitignore
-'''.lstrip()
+""".lstrip()
 
 
 def init(path, config=DEFAULTS):
     path = path or os.getcwd()
 
-    if os.path.exists(os.path.join(path, 'aletheia.yml')):
-        raise exceptions.AletheiaException(f'Path {os.path.abspath(path)} already has an aletheia.yml file.')
+    if os.path.exists(os.path.join(path, "aletheia.yml")):
+        raise exceptions.AletheiaException(f"Path {os.path.abspath(path)} already has an aletheia.yml file.")
 
-    with open(os.path.join(path, 'aletheia.yml'), 'w') as ofs:
+    with open(os.path.join(path, "aletheia.yml"), "w") as ofs:
         ofs.write(ALETHEIA_YML)
 
-    with open(os.path.join(path, '.gitignore'), 'w') as ofs:
+    with open(os.path.join(path, ".gitignore"), "w") as ofs:
         ofs.write(GITIGNORE)
 
-    logger.info(f'Initialized empty Aletheia config in {os.path.abspath(path)}.')
+    logger.info(f"Initialized empty Aletheia config in {os.path.abspath(path)}.")

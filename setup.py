@@ -32,7 +32,7 @@ setup(
         "toml>=0.10",
         "jinja2>=2.11",
         "pipenv",
-        "poetry"
+        "poetry",
     ],
     zip_safe=False,
     entry_points={"console_scripts": ["aletheia = aletheia.__main__:main"]},

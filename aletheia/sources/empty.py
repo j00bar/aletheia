@@ -19,18 +19,17 @@ class Source:
             try:
                 shutil.rmtree(self._tempdir)
             except:  # noqa: E722
-                logger.error('Error cleaning up empty plugin.')
+                logger.error("Error cleaning up empty plugin.")
 
     @property
     def working_dir(self):
         if not self._tempdir:
             if self.config.devel:
-                self._tempdir = devel_dir('empty--')
+                self._tempdir = devel_dir("empty--")
             else:
                 self._tempdir = tempfile.mkdtemp()
         return self._tempdir
 
     def run(self):
-        logger.info('Empty source.')
+        logger.info("Empty source.")
         return self.working_dir
-

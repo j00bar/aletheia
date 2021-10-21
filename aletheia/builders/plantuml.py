@@ -7,7 +7,7 @@ import tempfile
 from .. import DEFAULTS, exceptions
 from ..utils import ensure_dependencies, copytree, devel_dir
 
-ensure_dependencies(('plantuml', None))
+ensure_dependencies(("plantuml", None))
 logger = logging.getLogger(__name__)
 
 
@@ -24,7 +24,7 @@ class Plugin:
             try:
                 shutil.rmtree(self._tempdir)
             except:  # noqa: E722
-                logger.error('Error cleaning up plantuml plugin.')
+                logger.error("Error cleaning up plantuml plugin.")
 
     @property
     def output_dir(self):
@@ -37,19 +37,18 @@ class Plugin:
 
     def run(self):
         copytree(self.working_dir, self.output_dir)
-        logger.info('Searching for PlantUML files to compile.')
+        logger.info("Searching for PlantUML files to compile.")
         for root, dirs, files in os.walk(self.output_dir):
             for filename in files:
-                if filename.endswith(('.plantuml', '.puml')):
+                if filename.endswith((".plantuml", ".puml")):
                     file_path = os.path.join(root, filename)
-                    logger.info(f'Converting PlantUML diagram at {file_path}')
+                    logger.info(f"Converting PlantUML diagram at {file_path}")
                     result = subprocess.run(
-                        ['plantuml'] + self.cmdline_args + ['-o', os.path.abspath(root), file_path]
+                        ["plantuml"] + self.cmdline_args + ["-o", os.path.abspath(root), file_path]
                     )
                     if result.returncode != 0:
-                        raise exceptions.AletheiaException('Builder returned non-zero exit code.')
+                        raise exceptions.AletheiaException("Builder returned non-zero exit code.")
                     if not self.keep_puml:
                         os.remove(file_path)
-        logger.info('PlantUML scan complete.')
+        logger.info("PlantUML scan complete.")
         return self.output_dir
-
