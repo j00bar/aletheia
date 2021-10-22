@@ -11,7 +11,7 @@ setup(
     author='Joshua "jag" Ginsberg',
     url="https://github.com/j00bar/aletheia",
     license="GPLv3",
-    packages=find_packages("aletheia"),
+    packages=find_packages(exclude="tests"),
     include_package_data=True,
     long_description=long_description,
     long_description_content_type="text/markdown",
