@@ -15,10 +15,21 @@ ensure_dependencies(("git", "2.3.0"))
 
 
 class Source:
-    def __init__(self, config=DEFAULTS, hostname="github.com", repo="", branch="master", **kwargs):
+    def __init__(
+        self,
+        config=DEFAULTS,
+        hostname="github.com",
+        repo="",
+        branch="master",
+        protocol="https",
+        ssh_user="git",
+        **kwargs,
+    ):
         self.hostname = hostname
         self.repo = repo
         self.branch = branch
+        self.protocol = protocol
+        self.ssh_user = ssh_user
         self.config = config
         self._tempdir = None
 
@@ -38,6 +49,14 @@ class Source:
                 self._tempdir = tempfile.mkdtemp()
         return self._tempdir
 
+    @property
+    def url(self):
+        if self.protocol in ["http", "https"]:
+            return f"https://{self.hostname}/{self.repo}"
+        elif self.protocol == "ssh":
+            return f"{self.ssh_user}@{self.hostname}:{self.repo}"
+        raise ValueError(f"Unsupported protocol: {self.protocol}")
+
     def run(self):
         logger.info(f"Cloning git repo {self.repo}.")
         if self.config.devel and os.path.exists(os.path.join(self.working_dir, ".git")):
@@ -53,7 +72,7 @@ class Source:
             )
         else:
             result = subprocess.run(
-                ["git", "clone", f"https://{self.hostname}/{self.repo}", "-b", self.branch, "."],
+                ["git", "clone", self.url, "-b", self.branch, "."],
                 # env=dict(GIT_TERMINAL_PROMPT='0'),
                 cwd=self.working_dir,
             )
