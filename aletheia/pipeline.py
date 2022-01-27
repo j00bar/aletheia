@@ -13,12 +13,13 @@ from . import DEFAULTS
 from .builders import sphinx, plantuml
 from .exceptions import ConfigError
 from .converters import pandoc, hugoify, subdir, noop
-from .sources import git, googledrive, local, empty
+from .sources import confluence, git, googledrive, local, empty
 from .utils import copytree
 
 
 logger = logging.getLogger(__name__)
 PLUGINS = {
+    "confluence": confluence.Source,
     "sphinx": sphinx.Plugin,
     "pandoc": pandoc.Plugin,
     "github": git.Source,
