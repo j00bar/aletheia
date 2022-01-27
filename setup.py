@@ -20,6 +20,7 @@ setup(
         "semver>=2.10.0",
         "beautifulsoup4>=4.9.0",
         "pyyaml>=5.3.1",
+        "atlassian-python-api",
         "google-api-python-client>=1.8.3",
         "google-auth-httplib2>=0.0.3",
         "google-auth-oauthlib>=0.4.1",

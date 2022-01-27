@@ -6,3 +6,4 @@ aletheia.egg-info/
 .envrc
 build/
 *.egg
+.env
