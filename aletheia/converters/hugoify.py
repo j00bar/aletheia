@@ -23,6 +23,7 @@ class Plugin:
         add_index=False,
         index_title=None,
         filename_as_title=False,
+        frontmatter=None,
         **kwargs,
     ):
         self.working_dir = working_dir
@@ -30,6 +31,7 @@ class Plugin:
         self.filename_as_title = filename_as_title
         self.add_index = add_index
         self.index_title = index_title
+        self.frontmatter = frontmatter or {}
         self._tempdir = None
         self.config = config
 
@@ -101,6 +103,7 @@ class Plugin:
                             mtime = self.get_mtime(input_path)
                             title, html_content = self.extract_title(base, md_content)
                             metadata = dict(title=title, date=mtime)
+                            metadata.update(self.frontmatter)
                             if base == "index":
                                 metadata["weight"] = self.weight
 
