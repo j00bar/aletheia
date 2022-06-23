@@ -19,8 +19,8 @@ setup(
     install_requires=[
         "semver>=2.10.0",
         "beautifulsoup4>=4.9.0",
-        "pyyaml>=5.3.1",
-        "atlassian-python-api",
+        "pyyaml~=5.3",
+        "atlassian-python-api@https://github.com/atlassian-api/atlassian-python-api/archive/e8142c60ddbb1678e4b031a3abb64375cfe4df67.zip",  # noqa: E501
         "google-api-python-client>=1.8.3",
         "google-auth-httplib2>=0.0.3",
         "google-auth-oauthlib>=0.4.1",
